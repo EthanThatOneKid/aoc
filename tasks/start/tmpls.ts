@@ -35,7 +35,7 @@ import (
   "flag"
 
   // https://godocs.io/github.com/diamondburned/aoc-2022/aocutil
-    "github.com/diamondburned/aoc-2022/aocutil"
+  "github.com/diamondburned/aoc-2022/aocutil"
 )
 
 func main() {
