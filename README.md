@@ -20,6 +20,20 @@ deno run -A https://raw.githubusercontent.com/ethanthatonekid/aoc/main/tasks/sta
 
 See [2022](./2022).
 
+### Deno stuff
+
+#### Install Deno
+
+```bash
+curl -fsSL https://deno.land/x/install/install.sh | sh
+```
+
+#### Run tests
+
+```bash
+deno test -A
+```
+
 ----
 
 Solved with 💖 by [**@EthanThatOneKid**](https://etok.codes/)
