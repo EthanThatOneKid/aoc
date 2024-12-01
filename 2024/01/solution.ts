@@ -19,24 +19,24 @@ function part1(input: string): number {
 
 function part2(input: string): number {
     const lists = parseInput(input);
-    const frequencyMao = new Map<number, number>();
+    const frequencyMap = new Map<number, number>();
     for (let i = 0; i < lists[0].length; i++) {
-        frequencyMao.set(lists[0][i], 0);
+        frequencyMap.set(lists[0][i], 0);
     }
 
     for (let i = 0; i < lists[1].length; i++) {
         const value = lists[1][i];
-        if (!frequencyMao.has(value)) {
+        if (!frequencyMap.has(value)) {
             continue;
         }
 
-        frequencyMao.set(value, frequencyMao.get(value)! + 1);
+        frequencyMap.set(value, frequencyMap.get(value)! + 1);
     }
 
     let sum = 0;
     for (let i = 0; i < lists[0].length; i++) {
         const value = lists[0][i];
-        sum += value * frequencyMao.get(value)!;
+        sum += value * frequencyMap.get(value)!;
     }
 
     return sum;
