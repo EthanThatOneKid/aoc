@@ -1,10 +1,10 @@
 // deno run --allow-read 2024/05/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
-    new URL(import.meta.resolve("./my-input")),
+    new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input));
-  // console.log("Part 2", part2(input));
+  console.log("Part 2", part2(input));
 }
 
 function part1(input: string): number {
@@ -16,39 +16,62 @@ function part1(input: string): number {
   return sum;
 }
 
-function atMiddle(pages: Page[]): number {
+function part2(input: string): number {
+  const { rules, updates } = parseInput(input);
+  const unorderedUpdates = updates
+    .filter((update) => !checkPageOrderingRules(update, rules));
+  const orderedUpdates = unorderedUpdates
+    .map((update) => sortPages(update, rules));
+  const sum = orderedUpdates
+    .reduce((acc, update) => acc + atMiddle(update), 0);
+  return sum;
+}
+
+function sortPages(pages: Page[], rules: PageOrderingRules): Page[] {
+  return pages.toSorted((a, b) =>
+    checkPageOrderingRules([a, b], rules)
+      ? -1
+      : checkPageOrderingRules([b, a], rules)
+      ? 1
+      : 0
+  );
+}
+
+function atMiddle(pages: Page[]): Page {
   return pages[Math.floor(pages.length * 0.5)];
 }
 
-interface PageOrderingRule {
-  page: Page;
-  beforePage: Page;
-}
+type PageOrderingRules = Map<Page, Set<Page>>;
 
 type Page = number;
 
 function checkPageOrderingRules(
   pages: Page[],
-  rules: PageOrderingRule[],
+  rules: PageOrderingRules,
 ): boolean {
-  return rules.every((rule) => checkPageOrderingRule(pages, rule));
-}
+  for (const [page, beforePages] of rules) {
+    const pageIndex = pages.indexOf(page);
+    if (pageIndex === -1) {
+      continue;
+    }
 
-function checkPageOrderingRule(
-  pages: Page[],
-  rule: PageOrderingRule,
-): boolean {
-  const pageIndex = pages.indexOf(rule.page);
-  const beforePageIndex = pages.indexOf(rule.beforePage);
-  if (pageIndex === -1 || beforePageIndex === -1) {
-    return true;
+    for (const beforePage of beforePages) {
+      const beforePageIndex = pages.indexOf(beforePage);
+      if (beforePageIndex === -1) {
+        continue;
+      }
+
+      if (pageIndex > beforePageIndex) {
+        return false;
+      }
+    }
   }
 
-  return beforePageIndex > pageIndex;
+  return true;
 }
 
 interface Input {
-  rules: PageOrderingRule[];
+  rules: PageOrderingRules;
   updates: Page[][];
 }
 
@@ -59,15 +82,18 @@ function parseInput(input: string): Input {
   return { rules, updates };
 }
 
-function parseRules(input: string): PageOrderingRule[] {
+function parseRules(input: string): PageOrderingRules {
   return input
     .split("\n")
-    .map((line) => {
+    .reduce((rules, line) => {
       const [page, beforePage] = line
         .split("|")
         .map((n) => parseInt(n, 10));
-      return { page, beforePage };
-    });
+      return rules.set(
+        page,
+        (rules.get(page) ?? new Set<Page>()).add(beforePage),
+      );
+    }, new Map<Page, Set<Page>>());
 }
 
 function parseUpdates(input: string): Page[][] {
