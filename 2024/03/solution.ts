@@ -2,7 +2,7 @@ const MUL = "mul" as const;
 const DO = "do" as const;
 const DONT = "don't" as const;
 
-// deno run --allow-read 2024/03/solution.ts ./my-input
+// deno run --allow-read 2024/03/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve(Deno.args[0] ?? "./input")),

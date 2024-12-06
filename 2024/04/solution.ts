@@ -4,7 +4,7 @@ import { check } from "./check.ts";
 // deno run --allow-read 2024/04/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
-    new URL(import.meta.resolve("./my-input")),
+    new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input));
   console.log("Part 2", part2(input));
