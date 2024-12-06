@@ -32,8 +32,9 @@ function part1(input: string): number {
 
 function part2(input: string): number {
   const { situation, guard } = parseInput(input);
+
   let stuckInALoop = 0;
-  for (const newSituation of withObstructions(situation)) {
+  for (const newSituation of generateObstructions(situation)) {
     try {
       visit(newSituation, guard.direction, guard.row, guard.column);
     } catch (error) {
@@ -89,7 +90,7 @@ function visit(
   return visited;
 }
 
-function* withObstructions(situation: Situation) {
+function* generateObstructions(situation: Situation) {
   for (let row = 0; row < situation.length; row++) {
     for (let column = 0; column < situation[0].length; column++) {
       if (situation[row][column] === 0) {
