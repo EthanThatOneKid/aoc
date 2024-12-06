@@ -9,19 +9,43 @@ const velocities = {
 
 type Direction = typeof directions[number];
 
+class ErrorStuckInALoop extends Error {
+  constructor() {
+    super("Stuck in a loop");
+  }
+}
+
 // deno run --allow-read 2024/06/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input));
-  // console.log("Part 2", part2(input));
+  console.log("Part 2", part2(input));
 }
 
 function part1(input: string): number {
   const { situation, guard } = parseInput(input);
   const visited = visit(situation, guard.direction, guard.row, guard.column);
   return visited.size;
+}
+
+function part2(input: string): number {
+  const { situation, guard } = parseInput(input);
+  let stuckInALoop = 0;
+  for (const newSituation of withObstructions(situation)) {
+    try {
+      visit(newSituation, guard.direction, guard.row, guard.column);
+    } catch (error) {
+      if (!(error instanceof ErrorStuckInALoop)) {
+        throw error;
+      }
+
+      stuckInALoop++;
+    }
+  }
+
+  return stuckInALoop;
 }
 
 function visit(
@@ -31,6 +55,7 @@ function visit(
   column: number,
 ): Set<number> {
   const visited = new Set<number>();
+  const loopDetection = new Set<string>();
   const columns = situation[0].length;
   const rows = situation.length;
 
@@ -50,12 +75,38 @@ function visit(
       continue;
     }
 
+    const index = `${newRow},${newCol},${currentDirection}`;
+    if (loopDetection.has(index)) {
+      throw new ErrorStuckInALoop();
+    }
+
+    loopDetection.add(index);
     visited.add(linearIndex(columns, newRow, newCol));
     currentRow = newRow;
     currentColumn = newCol;
   }
 
   return visited;
+}
+
+function* withObstructions(situation: Situation) {
+  for (let row = 0; row < situation.length; row++) {
+    for (let column = 0; column < situation[0].length; column++) {
+      if (situation[row][column] === 0) {
+        yield withObstruction(situation, row, column);
+      }
+    }
+  }
+}
+
+function withObstruction(
+  situation: Situation,
+  row: number,
+  column: number,
+): Situation {
+  const newSituation = situation.map((row) => row.slice());
+  newSituation[row][column] = 1;
+  return newSituation;
 }
 
 function linearIndex(width: number, row: number, column: number): number {
