@@ -1,4 +1,4 @@
-const operations = {
+const operatorFns = {
   "+": (a: number, b: number) => a + b,
   "*": (a: number, b: number) => a * b,
 } as const;
@@ -6,21 +6,35 @@ const operations = {
 // deno run --allow-read 2024/07/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
-    new URL(import.meta.resolve("./my-input")),
+    new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input));
+  console.log("Part 2", part2(input));
 }
 
 function part1(input: string): number {
   const equations = parseInput(input);
-  const trueEquations = equations.filter((equation) =>
-    findTrueOperators(operations, equation) !== undefined
-  );
-  const sum = trueEquations.reduce(
-    (result, equation) => result + equation.testValue,
-    0,
-  );
-  return sum;
+  return sumTrueEquations(operatorFns, equations);
+}
+
+function part2(input: string): number {
+  const equations = parseInput(input);
+  const currentOperatorFns = {
+    ...operatorFns,
+    "||": (a: number, b: number) => parseInt(`${a}${b}`),
+  };
+  return sumTrueEquations(currentOperatorFns, equations);
+}
+
+function sumTrueEquations(fns: OperatorFns, equations: Equation[]): number {
+  return equations.reduce((sum, equation) => {
+    const operators = findTrueOperators(fns, equation);
+    if (operators !== undefined) {
+      return sum + equation.testValue;
+    }
+
+    return sum;
+  }, 0);
 }
 
 function findTrueOperators(
