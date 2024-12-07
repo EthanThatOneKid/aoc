@@ -19,22 +19,21 @@ function part1(input: string): number {
 
 function part2(input: string): number {
   const equations = parseInput(input);
-  const currentOperatorFns = {
-    ...operatorFns,
-    "||": (a: number, b: number) => parseInt(`${a}${b}`),
-  };
-  return sumTrueEquations(currentOperatorFns, equations);
+  return sumTrueEquations(
+    {
+      ...operatorFns,
+      "||": (a: number, b: number) => parseInt(`${a}${b}`),
+    },
+    equations,
+  );
 }
 
 function sumTrueEquations(fns: OperatorFns, equations: Equation[]): number {
-  return equations.reduce((sum, equation) => {
-    const operators = findTrueOperators(fns, equation);
-    if (operators !== undefined) {
-      return sum + equation.testValue;
-    }
-
-    return sum;
-  }, 0);
+  return equations.reduce(
+    (sum, equation) =>
+      findTrueOperators(fns, equation) ? sum + equation.testValue : sum,
+    0,
+  );
 }
 
 function findTrueOperators(
@@ -47,10 +46,7 @@ function findTrueOperators(
       equation.numbers.length - 1,
     )
   ) {
-    if (
-      evaluateEquation(fns, equation.numbers, operators) ===
-        equation.testValue
-    ) {
+    if (evaluateEquation(fns, equation, operators)) {
       return operators;
     }
   }
@@ -58,16 +54,17 @@ function findTrueOperators(
 
 function evaluateEquation(
   fns: OperatorFns,
-  numbers: number[],
+  equation: Equation,
   operators: string[],
-): number {
-  return numbers.reduce((acc, number, index) => {
-    if (index === 0) {
-      return number;
-    }
+): boolean {
+  return equation.testValue ===
+    equation.numbers.reduce((acc, number, index) => {
+      if (index === 0) {
+        return number;
+      }
 
-    return fns[operators[index - 1]](acc, number);
-  }, 0);
+      return fns[operators[index - 1]](acc, number);
+    }, 0);
 }
 
 type OperatorFns = Record<string, (a: number, b: number) => number>;
