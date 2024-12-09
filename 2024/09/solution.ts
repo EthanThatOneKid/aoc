@@ -3,20 +3,20 @@ if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve("./input")),
   );
-  console.log("Part 1", part1(input));
-  console.log("Part 2", part2(input));
+  console.log("Part 1", part1(input)); // 1928
+  console.log("Part 2", part2(input)); // 2858
 }
 
 function part1(input: string): number {
   const disk = parseDisk(input);
-  const moved = moveFileBlocks(disk);
-  return checksum(moved);
+  moveFileBlocks(disk);
+  return checksum(disk);
 }
 
 function part2(input: string): number {
   const disk = parseDisk(input);
-  const moved = moveWholeFiles(disk);
-  return checksum(moved);
+  moveWholeFiles(disk);
+  return checksum(disk);
 }
 
 function _renderDisk(disk: Disk): string {
@@ -38,10 +38,9 @@ function checksum(disk: Disk): number {
   return sum;
 }
 
-function moveWholeFiles(disk: Disk): Disk {
-  const result = disk.slice();
-  for (const [fileStart, fileEnd] of byDecreasingFileID(result)) {
-    for (const [freeStart, freeEnd] of freeRanges(result)) {
+function moveWholeFiles(disk: Disk): void {
+  for (const [fileStart, fileEnd] of byDecreasingFileID(disk)) {
+    for (const [freeStart, freeEnd] of freeRanges(disk)) {
       if (
         freeStart >= fileStart ||
         freeEnd - freeStart < fileEnd - fileStart
@@ -49,11 +48,9 @@ function moveWholeFiles(disk: Disk): Disk {
         continue;
       }
 
-      moveWholeFile(result, fileStart, fileEnd, freeStart);
+      moveWholeFile(disk, fileStart, fileEnd, freeStart);
     }
   }
-
-  return result;
 }
 
 function moveWholeFile(
@@ -61,7 +58,7 @@ function moveWholeFile(
   start: number,
   end: number,
   destinationStart: number,
-) {
+): void {
   for (let i = start; i <= end; i++) {
     swap(disk, i, destinationStart + i - start);
   }
@@ -102,25 +99,21 @@ function* freeRanges(disk: Disk): Generator<[number, number]> {
   }
 }
 
-function moveFileBlocks(disk: Disk): Disk {
-  const result = disk.slice();
-
+function moveFileBlocks(disk: Disk): void {
   let i = 0;
-  while (i < result.length) {
-    const freeSpace = result.indexOf(-1);
-    const fileBlock = result.length - 1 - i;
+  while (i < disk.length) {
+    const freeSpace = disk.indexOf(-1);
+    const fileBlock = disk.length - 1 - i;
     if (freeSpace > fileBlock) {
       break;
     }
 
-    swap(result, fileBlock, freeSpace);
+    swap(disk, fileBlock, freeSpace);
     i++;
   }
-
-  return result;
 }
 
-function swap(disk: Disk, i: number, j: number) {
+function swap(disk: Disk, i: number, j: number): void {
   const temp = disk[i];
   disk[i] = disk[j];
   disk[j] = temp;
