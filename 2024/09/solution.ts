@@ -26,16 +26,10 @@ function _renderDisk(disk: Disk): string {
 }
 
 function checksum(disk: Disk): number {
-  let sum = 0;
-  for (let i = 0; i < disk.length; i++) {
-    if (disk[i] === -1) {
-      continue;
-    }
-
-    sum += disk[i] * i;
-  }
-
-  return sum;
+  return disk.reduce(
+    (sum, block, i) => block === -1 ? sum : sum + block * i,
+    0,
+  );
 }
 
 function moveWholeFiles(disk: Disk): void {
