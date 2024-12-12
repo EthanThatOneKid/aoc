@@ -6,13 +6,111 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 1930
+  console.log("Part 2", part2(input)); // want 1206, have 1342
 }
 
 function part1(input: string): number {
   const arrangement = parseArrangement(input);
   const gardens = gardensFrom(arrangement);
-  console.log(renderArrangement(arrangement, gardens));
   return fencePriceFrom(...gardens);
+}
+
+function part2(input: string): number {
+  const arrangement = parseArrangement(input);
+  const gardens = gardensFrom(arrangement);
+  console.log(renderArrangement(arrangement, gardens));
+  return discountFencePriceFrom(arrangement, ...gardens);
+}
+
+function discountFencePriceFrom(
+  arrangement: Arrangement,
+  ...gardens: Garden[]
+) {
+  return gardens.reduce(
+    (sum, garden) => {
+      const corners = gardenCornersFrom(arrangement, garden);
+      console.log({ flower: garden.flower, corners });
+      return sum + (corners * garden.plots.length);
+    },
+    0,
+  );
+}
+
+// Corner number is the same as number of sides of a garden region.
+function gardenCornersFrom(
+  arrangement: Arrangement,
+  garden: Garden,
+): number {
+  let corners = 0;
+  for (const i of garden.plots) {
+    corners += cornersAt(arrangement, i);
+  }
+
+  return corners;
+}
+
+function cornersAt(arrangement: Arrangement, i: number): number {
+  return [[-1, 0], [0, 1], [1, 0], [0, -1]].reduce(
+    (corners, [dRow, dColumn]) => {
+      const neighbor = i + dRow * arrangement.columns + dColumn;
+      if (
+        !inArrangement(arrangement, neighbor, dRow, dColumn) ||
+        arrangement.plots[neighbor] === arrangement.plots[i]
+      ) {
+        return corners;
+      }
+
+      const oppositeNeighbor = i - dRow * arrangement.columns - dColumn;
+      if (
+        !inArrangement(
+          arrangement,
+          oppositeNeighbor,
+          -dRow,
+          -dColumn,
+        ) ||
+        arrangement.plots[oppositeNeighbor] ===
+          arrangement.plots[neighbor]
+      ) {
+        return corners;
+      }
+
+      return corners + 1;
+    },
+    0,
+  );
+}
+
+function inArrangement(
+  arrangement: Arrangement,
+  i: number,
+  dRow: number,
+  dColumn: number,
+): boolean {
+  if (i < 0 || i >= arrangement.plots.length) {
+    return false;
+  }
+
+  if (dRow < 0 && i < -dRow * arrangement.columns) {
+    return false;
+  }
+
+  if (
+    dRow > 0 && i >= arrangement.plots.length - dRow * arrangement.columns
+  ) {
+    return false;
+  }
+
+  if (dColumn < 0 && i % arrangement.columns < -dColumn) {
+    return false;
+  }
+
+  if (
+    dColumn > 0 && i % arrangement.columns >= arrangement.columns - dColumn
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function fencePriceFrom(...gardens: Garden[]): number {
