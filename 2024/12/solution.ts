@@ -1,12 +1,12 @@
 import { bgRgb24, type Rgb } from "jsr:@std/fmt@1.0.3/colors";
 
-// deno run --allow-read 2024/12/solution.ts
+// deno --allow-read 2024/12/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 1930
-  console.log("Part 2", part2(input)); // want 1206, have 1342
+  console.log("Part 2", part2(input)); // 1206
 }
 
 function part1(input: string): number {
@@ -29,7 +29,6 @@ function discountFencePriceFrom(
   return gardens.reduce(
     (sum, garden) => {
       const corners = gardenCornersFrom(arrangement, garden);
-      console.log({ flower: garden.flower, corners });
       return sum + (corners * garden.plots.length);
     },
     0,
@@ -43,45 +42,65 @@ function gardenCornersFrom(
 ): number {
   let corners = 0;
   for (const i of garden.plots) {
-    corners += cornersAt(arrangement, i);
+    const directions = [
+      { dRow: 0, dColumn: -1 }, // Top right
+      { dRow: 0, dColumn: 1 }, // Top left
+      { dRow: 0, dColumn: -1 }, // Bottom right
+      { dRow: 0, dColumn: 1 }, // Bottom left
+    ];
+
+    const oppositeDirections = [
+      { dRow: 1, dColumn: 0 }, // Top right
+      { dRow: 1, dColumn: 0 }, // Top left
+      { dRow: -1, dColumn: 0 }, // Bottom right
+      { dRow: -1, dColumn: 0 }, // Bottom left
+    ];
+
+    for (let j = 0; j < directions.length; j++) {
+      const { dRow, dColumn } = directions[j];
+      const { dRow: oppRow, dColumn: oppColumn } = oppositeDirections[j];
+      if (
+        !inGarden(arrangement, garden, i, dRow, dColumn) &&
+        !inGarden(arrangement, garden, i, oppRow, oppColumn)
+      ) {
+        corners++;
+      }
+    }
+
+    const insideCorners = [
+      { dRow0: 0, dColumn0: 1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: 1 }, // Top right
+      { dRow0: 0, dColumn0: -1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: -1 }, // Top left
+      { dRow0: 0, dColumn0: 1, dRow1: -1, dColumn1: 0, dRow2: -1, dColumn2: 1 }, // Bottom right
+      {
+        dRow0: 0,
+        dColumn0: -1,
+        dRow1: -1,
+        dColumn1: 0,
+        dRow2: -1,
+        dColumn2: -1,
+      }, // Bottom left
+    ];
+
+    for (
+      const { dRow0, dColumn0, dRow1, dColumn1, dRow2, dColumn2 }
+        of insideCorners
+    ) {
+      if (
+        inGarden(arrangement, garden, i, dRow0, dColumn0) &&
+        inGarden(arrangement, garden, i, dRow1, dColumn1) &&
+        !inGarden(arrangement, garden, i, dRow2, dColumn2)
+      ) {
+        corners++;
+      }
+    }
   }
 
   return corners;
 }
 
-function cornersAt(arrangement: Arrangement, i: number): number {
-  return [[-1, 0], [0, 1], [1, 0], [0, -1]].reduce(
-    (corners, [dRow, dColumn]) => {
-      const neighbor = i + dRow * arrangement.columns + dColumn;
-      if (
-        !inArrangement(arrangement, neighbor, dRow, dColumn) ||
-        arrangement.plots[neighbor] === arrangement.plots[i]
-      ) {
-        return corners;
-      }
-
-      const oppositeNeighbor = i - dRow * arrangement.columns - dColumn;
-      if (
-        !inArrangement(
-          arrangement,
-          oppositeNeighbor,
-          -dRow,
-          -dColumn,
-        ) ||
-        arrangement.plots[oppositeNeighbor] ===
-          arrangement.plots[neighbor]
-      ) {
-        return corners;
-      }
-
-      return corners + 1;
-    },
-    0,
-  );
-}
-
-function inArrangement(
+function inGarden(
   arrangement: Arrangement,
+  garden: Garden,
   i: number,
   dRow: number,
   dColumn: number,
@@ -110,7 +129,7 @@ function inArrangement(
     return false;
   }
 
-  return true;
+  return garden.plots.includes(i + dRow * arrangement.columns + dColumn);
 }
 
 function fencePriceFrom(...gardens: Garden[]): number {
