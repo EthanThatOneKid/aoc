@@ -40,67 +40,74 @@ function gardenCornersFrom(
   arrangement: Arrangement,
   garden: Garden,
 ): number {
+  return garden.plots.reduce(
+    (sum, i) => sum + cornersAt(arrangement, i),
+    0,
+  );
+}
+
+function cornersAt(
+  arrangement: Arrangement,
+  i: number,
+): number {
   let corners = 0;
-  for (const i of garden.plots) {
-    const directions = [
-      { dRow: 0, dColumn: -1 }, // Top right
-      { dRow: 0, dColumn: 1 }, // Top left
-      { dRow: 0, dColumn: -1 }, // Bottom right
-      { dRow: 0, dColumn: 1 }, // Bottom left
-    ];
 
-    const oppositeDirections = [
-      { dRow: 1, dColumn: 0 }, // Top right
-      { dRow: 1, dColumn: 0 }, // Top left
-      { dRow: -1, dColumn: 0 }, // Bottom right
-      { dRow: -1, dColumn: 0 }, // Bottom left
-    ];
+  const directions = [
+    { dRow: 0, dColumn: -1 }, // Top right
+    { dRow: 0, dColumn: 1 }, // Top left
+    { dRow: 0, dColumn: -1 }, // Bottom right
+    { dRow: 0, dColumn: 1 }, // Bottom left
+  ];
 
-    for (let j = 0; j < directions.length; j++) {
-      const { dRow, dColumn } = directions[j];
-      const { dRow: oppRow, dColumn: oppColumn } = oppositeDirections[j];
-      if (
-        !inGarden(arrangement, garden, i, dRow, dColumn) &&
-        !inGarden(arrangement, garden, i, oppRow, oppColumn)
-      ) {
-        corners++;
-      }
-    }
+  const oppositeDirections = [
+    { dRow: 1, dColumn: 0 }, // Top right
+    { dRow: 1, dColumn: 0 }, // Top left
+    { dRow: -1, dColumn: 0 }, // Bottom right
+    { dRow: -1, dColumn: 0 }, // Bottom left
+  ];
 
-    const insideCorners = [
-      { dRow0: 0, dColumn0: 1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: 1 }, // Top right
-      { dRow0: 0, dColumn0: -1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: -1 }, // Top left
-      { dRow0: 0, dColumn0: 1, dRow1: -1, dColumn1: 0, dRow2: -1, dColumn2: 1 }, // Bottom right
-      {
-        dRow0: 0,
-        dColumn0: -1,
-        dRow1: -1,
-        dColumn1: 0,
-        dRow2: -1,
-        dColumn2: -1,
-      }, // Bottom left
-    ];
-
-    for (
-      const { dRow0, dColumn0, dRow1, dColumn1, dRow2, dColumn2 }
-        of insideCorners
+  directions.forEach(({ dRow, dColumn }, j) => {
+    const { dRow: oppositeRow, dColumn: oppositeColumn } =
+      oppositeDirections[j];
+    if (
+      !inGarden(arrangement, i, dRow, dColumn) &&
+      !inGarden(arrangement, i, oppositeRow, oppositeColumn)
     ) {
+      corners++;
+    }
+  });
+
+  const insideCorners = [
+    { dRow0: 0, dColumn0: 1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: 1 }, // Top right
+    { dRow0: 0, dColumn0: -1, dRow1: 1, dColumn1: 0, dRow2: 1, dColumn2: -1 }, // Top left
+    { dRow0: 0, dColumn0: 1, dRow1: -1, dColumn1: 0, dRow2: -1, dColumn2: 1 }, // Bottom right
+    {
+      dRow0: 0,
+      dColumn0: -1,
+      dRow1: -1,
+      dColumn1: 0,
+      dRow2: -1,
+      dColumn2: -1,
+    }, // Bottom left
+  ];
+
+  insideCorners.forEach(
+    ({ dRow0, dColumn0, dRow1, dColumn1, dRow2, dColumn2 }) => {
       if (
-        inGarden(arrangement, garden, i, dRow0, dColumn0) &&
-        inGarden(arrangement, garden, i, dRow1, dColumn1) &&
-        !inGarden(arrangement, garden, i, dRow2, dColumn2)
+        inGarden(arrangement, i, dRow0, dColumn0) &&
+        inGarden(arrangement, i, dRow1, dColumn1) &&
+        !inGarden(arrangement, i, dRow2, dColumn2)
       ) {
         corners++;
       }
-    }
-  }
+    },
+  );
 
   return corners;
 }
 
 function inGarden(
   arrangement: Arrangement,
-  garden: Garden,
   i: number,
   dRow: number,
   dColumn: number,
@@ -129,7 +136,8 @@ function inGarden(
     return false;
   }
 
-  return garden.plots.includes(i + dRow * arrangement.columns + dColumn);
+  return arrangement.plots[i] ===
+    arrangement.plots[i + dRow * arrangement.columns + dColumn];
 }
 
 function fencePriceFrom(...gardens: Garden[]): number {
