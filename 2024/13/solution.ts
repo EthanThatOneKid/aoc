@@ -1,12 +1,10 @@
-import { array } from "npm:vectorious@6.1.14";
-
 // deno --allow-read 2024/13/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 480
-  console.log("Part 2", part2(input)); // 416082282239
+  console.log("Part 2", part2(input)); // 875318608908
 }
 
 function part1(input: string): number {
@@ -36,23 +34,18 @@ function fixMachine(
 function cheapestPrize(machine: Machine): number {
   const { buttonA: [aX, aY], buttonB: [bX, bY], prize: [prizeX, prizeY] } =
     machine;
-  const x = array([[aX, bX], [aY, bY]]).solve(array([[prizeX], [prizeY]]));
-  const a = x.get(0, 0);
-  const b = x.get(1, 0);
-  if (!isWhole(a) || !isWhole(b)) {
+  const determinant = aX * bY - aY * bX;
+  if (determinant === 0) {
     return 0;
   }
 
-  return 3 * Math.round(a) + Math.round(b);
-}
-
-function isWhole(n: number, negligeable = 0.0000000000001): boolean {
-  const diff = n - Math.floor(n);
-  if (diff > negligeable && diff < 1 - negligeable) {
-    return false;
+  const a = Math.round((bY * prizeX - bX * prizeY) / determinant);
+  const b = Math.round((aX * prizeY - aY * prizeX) / determinant);
+  if (a * aX + b * bX !== prizeX || a * aY + b * bY !== prizeY) {
+    return 0;
   }
 
-  return true;
+  return a * 3 + b;
 }
 
 function parseMachines(input: string): Machine[] {
