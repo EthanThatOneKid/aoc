@@ -4,6 +4,7 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 12
+  console.log("Part 2", part2(input)); // 1
 }
 
 function part1(input: string): number {
@@ -15,6 +16,37 @@ function part1(input: string): number {
   }
 
   return safetyFactor(width, height, robots);
+}
+
+function part2(input: string): number {
+  const width = 11;
+  const height = 7;
+  const robots = parseRobots(input);
+
+  let iterations = 0;
+  while (true) {
+    const positions = allUniquePositions(width, robots);
+    if (positions.size === robots.length) {
+      break;
+    }
+
+    robots.forEach((robot) => step(width, height, robot));
+    iterations++;
+  }
+
+  return iterations;
+}
+
+function allUniquePositions(width: number, robots: Robot[]): Set<number> {
+  return new Set(
+    robots.map((robot) =>
+      linearIndex(width, robot.position.x, robot.position.y)
+    ),
+  );
+}
+
+function linearIndex(width: number, x: number, y: number): number {
+  return y * width + x;
 }
 
 function safetyFactor(
