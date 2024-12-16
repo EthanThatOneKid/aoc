@@ -15,6 +15,7 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 2028
+  console.log("Part 2", part2(input)); // 9021
 }
 
 function part1(input: string): number {
@@ -27,9 +28,90 @@ function part1(input: string): number {
   return sumGPSCoordinates(warehouse);
 }
 
+function part2(input: string): number {
+  const warehouse = parseWiderWarehouse(input);
+  console.log(renderWiderWarehouse(warehouse));
+  return 0;
+}
+
+function wideStep(warehouse: Warehouse): boolean {
+  // Increment applicable axis 1 by 1 until the robot can't move more boxes.
+
+  const movement = warehouse.movements.shift();
+  if (movement === undefined) {
+    return false;
+  }
+
+  wideMoveRobot(warehouse, movement);
+  return true;
+}
+
+function wideMoveRobot(warehouse: Warehouse, movement: Movement): void {
+  const dy = velocities[movement][0];
+  const dx = velocities[movement][1];
+
+  // Find next available cell to move the box(es).
+  let i = 1;
+  while (true) {
+    if (!inWarehouse(warehouse, warehouse.robot, dy * i, dx * i)) {
+      return;
+    }
+
+    const position = warehouse.robot +
+      linearIndex(warehouse.width, dy * i, dx * i);
+    if (warehouse.walls.has(position)) {
+      return;
+    }
+
+    if (!warehouse.boxes.has(position)) {
+      break;
+    }
+
+    i++;
+  }
+
+  if (i > 1) {
+    // Remove the box in front of the robot.
+    warehouse.boxes.delete(
+      warehouse.robot + linearIndex(warehouse.width, dy, dx),
+    );
+
+    // Move the box in the next available cell.
+    warehouse.boxes.add(
+      warehouse.robot + linearIndex(warehouse.width, dy * i, dx * i),
+    );
+  }
+
+  // Move the robot.
+  warehouse.robot += linearIndex(warehouse.width, dy, dx);
+}
+
 function sumGPSCoordinates(warehouse: Warehouse): number {
   return Array.from(generateGPSCoordinates(warehouse))
     .reduce((sum, gps) => sum + gps, 0);
+}
+
+function renderWiderWarehouse(warehouse: Warehouse): string {
+  let result = "";
+  for (let y = 0; y < warehouse.height; y++) {
+    for (let x = 0; x < warehouse.width + 1; x++) {
+      const index = linearIndex(warehouse.width, y, x);
+      if (warehouse.robot === index) {
+        result += "@";
+      } else if (warehouse.boxes.has(index)) {
+        result += "[]";
+        x++;
+      } else if (warehouse.walls.has(index)) {
+        result += "#";
+      } else {
+        result += ".";
+      }
+    }
+
+    result += "\n";
+  }
+
+  return result;
 }
 
 function renderWarehouse(warehouse: Warehouse): string {
@@ -75,15 +157,9 @@ function step(warehouse: Warehouse): boolean {
   return true;
 }
 
-function moveRobot(warehouse: Warehouse, movement: Movement): void {
-  try {
-    velocities[movement][0];
-    velocities[movement][1];
-  } catch (error) {
-    console.error({ movement });
-    throw error;
-  }
+// Check if robot or box is hitting another box or wall.
 
+function moveRobot(warehouse: Warehouse, movement: Movement): void {
   const dy = velocities[movement][0];
   const dx = velocities[movement][1];
 
@@ -141,6 +217,64 @@ function inWarehouse(
   }
 
   return true;
+}
+
+function parseWiderWarehouse(input: string): Warehouse {
+  const [matrixString, movementsString] = input.split("\r\n\r\n");
+  const { walls, boxes, robot, height, width } = parseWiderMatrix(
+    matrixString,
+  );
+  return {
+    walls,
+    boxes,
+    robot,
+    height,
+    width,
+    movements: parseMovements(movementsString),
+  };
+}
+
+function parseWiderMatrix(input: string): Warehouse {
+  const walls = new Set<number>();
+  const boxes = new Set<number>();
+  let height = 0;
+  let width = 0;
+  let robot = -1;
+  input
+    .split("\r\n")
+    .forEach((line, y) =>
+      line
+        .split("")
+        .forEach((cell, x) => {
+          const index = linearIndex(
+            line.length * 2 - 1,
+            y,
+            x * 2,
+          );
+          switch (cell) {
+            case "#": {
+              walls.add(index);
+              walls.add(index + 1);
+              break;
+            }
+
+            case "O": {
+              boxes.add(index);
+              break;
+            }
+
+            case "@": {
+              robot = index;
+              break;
+            }
+          }
+
+          height = Math.max(height, y + 1);
+          width = Math.max(width, x * 2 + 1);
+        })
+    );
+
+  return { walls, boxes, robot, height, width, movements: [] };
 }
 
 function parseWarehouse(input: string): Warehouse {
