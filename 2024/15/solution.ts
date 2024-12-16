@@ -31,12 +31,16 @@ function part1(input: string): number {
 function part2(input: string): number {
   const warehouse = parseWiderWarehouse(input);
   console.log(renderWiderWarehouse(warehouse));
+
+  while (wideStep(warehouse)) {
+    continue;
+  }
+
   return 0;
+  // return sumGPSCoordinates(warehouse);
 }
 
 function wideStep(warehouse: Warehouse): boolean {
-  // Increment applicable axis 1 by 1 until the robot can't move more boxes.
-
   const movement = warehouse.movements.shift();
   if (movement === undefined) {
     return false;
@@ -46,40 +50,42 @@ function wideStep(warehouse: Warehouse): boolean {
   return true;
 }
 
+// Increment applicable axis 1 by 1 until the robot can't move more boxes.
 function wideMoveRobot(warehouse: Warehouse, movement: Movement): void {
-  const dy = velocities[movement][0];
-  const dx = velocities[movement][1];
+  const [dy, dx] = velocities[movement];
 
   // Find next available cell to move the box(es).
-  let i = 1;
+  const boxes: Array<Set<number>> = [new Set([warehouse.robot])];
   while (true) {
-    if (!inWarehouse(warehouse, warehouse.robot, dy * i, dx * i)) {
-      return;
+    const currentBoxes = new Set<number>();
+    for (const previousBox of boxes.at(-1) ?? []) {
+      for (let i = -1; i <= 1; i++) {
+        if (!inWarehouse(warehouse, previousBox, dy, dx + i)) {
+          continue;
+        }
+
+        const currentBox = previousBox +
+          linearIndex(warehouse.width, dy, dx + i);
+        if (!warehouse.boxes.has(currentBox)) {
+          continue;
+        }
+
+        currentBoxes.add(currentBox);
+      }
     }
 
-    const position = warehouse.robot +
-      linearIndex(warehouse.width, dy * i, dx * i);
-    if (warehouse.walls.has(position)) {
-      return;
-    }
-
-    if (!warehouse.boxes.has(position)) {
+    if (currentBoxes.size === 0) {
       break;
     }
 
-    i++;
+    boxes.push(currentBoxes);
   }
 
-  if (i > 1) {
-    // Remove the box in front of the robot.
-    warehouse.boxes.delete(
-      warehouse.robot + linearIndex(warehouse.width, dy, dx),
-    );
+  if (boxes.length > 1) {
+    console.log({ boxes });
 
-    // Move the box in the next available cell.
-    warehouse.boxes.add(
-      warehouse.robot + linearIndex(warehouse.width, dy * i, dx * i),
-    );
+    // Move all the boxes.
+    throw new Error("Not implemented");
   }
 
   // Move the robot.
@@ -160,8 +166,7 @@ function step(warehouse: Warehouse): boolean {
 // Check if robot or box is hitting another box or wall.
 
 function moveRobot(warehouse: Warehouse, movement: Movement): void {
-  const dy = velocities[movement][0];
-  const dx = velocities[movement][1];
+  const [dy, dx] = velocities[movement];
 
   // Find next available cell to move the box.
   let i = 1;
@@ -220,7 +225,7 @@ function inWarehouse(
 }
 
 function parseWiderWarehouse(input: string): Warehouse {
-  const [matrixString, movementsString] = input.split("\r\n\r\n");
+  const [matrixString, movementsString] = input.split("\n\n");
   const { walls, boxes, robot, height, width } = parseWiderMatrix(
     matrixString,
   );
@@ -241,7 +246,7 @@ function parseWiderMatrix(input: string): Warehouse {
   let width = 0;
   let robot = -1;
   input
-    .split("\r\n")
+    .split("\n")
     .forEach((line, y) =>
       line
         .split("")
@@ -278,7 +283,7 @@ function parseWiderMatrix(input: string): Warehouse {
 }
 
 function parseWarehouse(input: string): Warehouse {
-  const [matrixString, movementsString] = input.split("\r\n\r\n");
+  const [matrixString, movementsString] = input.split("\n\n");
   const { walls, boxes, robot, height, width } = parseMatrix(matrixString);
   return {
     walls,
@@ -297,7 +302,7 @@ function parseMatrix(matrixString: string): Warehouse {
   let width = 0;
   let robot = -1;
   matrixString
-    .split("\r\n")
+    .split("\n")
     .forEach((line, y) =>
       line
         .split("")
@@ -334,7 +339,7 @@ function linearIndex(width: number, y: number, x: number): number {
 
 function parseMovements(movementsString: string): Movement[] {
   return movementsString
-    .split("\r\n")
+    .split("\n")
     .map((line) => line.split("").map((movement) => movement as Movement))
     .flat();
 }
