@@ -10,44 +10,43 @@ type Direction = 0 | 1 | 2 | 3;
 // deno --allow-read 2024/16/solution.ts
 if (import.meta.main) {
   const input = await Deno.readTextFile(
-    new URL(import.meta.resolve("./my-input")),
+    new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 7036
 }
 
 function part1(input: string): number {
   const maze = parseMaze(input);
-  const lowestScore = traverse(maze);
-  return lowestScore;
+  return findLowestScore(traverse(maze), maze.end);
+}
+
+function findLowestScore(visited: ReindeerMemory, end: number): number {
+  return Math.min(
+    ...visited
+      .values()
+      .filter(({ path }) => path.at(-1) === end)
+      .map(({ score }) => score),
+  );
 }
 
 // bfs
-function traverse(maze: Maze): number {
-  let lowestScore = Infinity;
-  const visited = new Map<number, number>();
-  const reindeers: Reindeer[] = [makeReindeer(maze.start)];
+function traverse(maze: Maze): ReindeerMemory {
+  const visited: ReindeerMemory = new Map();
+  const reindeers: Reindeer[] = [makeReindeer(-1, maze.start)];
   while (reindeers.length > 0) {
     const reindeer = reindeers.shift()!;
-    if (reindeer.score > lowestScore) {
-      continue;
-    }
-
     if (rememberReindeer(visited, reindeer)) {
       continue;
     }
 
     if (reindeer.position === maze.end) {
-      lowestScore = Math.min(lowestScore, reindeer.score);
       continue;
     }
 
     // Attempt to move forward.
     const nextReindeer = makeReindeer(
-      translate(
-        maze.width,
-        reindeer.position,
-        reindeer.direction,
-      ),
+      reindeer.id,
+      translate(maze.width, reindeer.position, reindeer.direction),
       reindeer.score + 1,
       reindeer.direction,
     );
@@ -58,6 +57,7 @@ function traverse(maze: Maze): number {
     // Rotate clockwise.
     reindeers.push(
       makeReindeer(
+        reindeer.id,
         reindeer.position,
         reindeer.score + 1_000,
         rotate(reindeer.direction),
@@ -67,6 +67,7 @@ function traverse(maze: Maze): number {
     // Rotate counter-clockwise.
     reindeers.push(
       makeReindeer(
+        reindeer.id,
         reindeer.position,
         reindeer.score + 1_000,
         rotate(reindeer.direction, true),
@@ -74,38 +75,58 @@ function traverse(maze: Maze): number {
     );
   }
 
-  return lowestScore;
+  return visited;
 }
 
-function memorizeReindeer(visited: Map<number, number>, reindeer: Reindeer) {
-  const reindeerID = toReindeerID(reindeer);
-  visited.set(reindeerID, reindeer.score);
-}
-
-function rememberReindeer(visited: Map<number, number>, reindeer: Reindeer) {
-  const reindeerID = toReindeerID(reindeer);
-  const remembered = visited.get(reindeerID);
-  const remembers = remembered !== undefined && remembered <= reindeer.score;
-  if (!remembers) {
+function rememberReindeer(
+  visited: ReindeerMemory,
+  reindeer: Reindeer,
+): boolean {
+  const remembered = visited.get(reindeer.id);
+  if (
+    (remembered === undefined ||
+      remembered.score > reindeer.score)
+  ) {
     memorizeReindeer(visited, reindeer);
+    return false;
   }
 
-  return remembers;
+  return true;
 }
 
-function toReindeerID(reindeer: Reindeer): number {
-  return reindeer.position * directions.length + reindeer.direction;
+function memorizeReindeer(visited: ReindeerMemory, reindeer: Reindeer): void {
+  visited.set(
+    reindeer.id,
+    {
+      score: reindeer.score,
+      path: [
+        ...visited.get(reindeer.previousID)?.path ?? [],
+        reindeer.position,
+      ],
+    },
+  );
 }
+
+type ReindeerMemory = Map<number, { score: number; path: number[] }>;
 
 function makeReindeer(
+  previousID: number,
   position: number,
   score = 0,
   direction: Direction = 0,
 ): Reindeer {
-  return { position, score, direction };
+  return {
+    id: position * directions.length + direction,
+    previousID,
+    position,
+    score,
+    direction,
+  };
 }
 
 interface Reindeer {
+  id: number;
+  previousID: number;
   score: number;
   position: number;
   direction: Direction;
