@@ -13,11 +13,52 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 7036
+  console.log("Part 2", part2(input)); // want 45, have 37
 }
 
 function part1(input: string): number {
   const maze = parseMaze(input);
   return findLowestScore(traverse(maze), maze.end);
+}
+
+function part2(input: string): number {
+  const maze = parseMaze(input);
+  const bestTiles = findBestTiles(traverse(maze), maze.end);
+  console.log(renderBestTiles(maze, bestTiles));
+  return bestTiles.size;
+}
+
+function renderBestTiles(
+  { width, height, walls }: Maze,
+  tiles: Set<number>,
+): string {
+  return Array.from(
+    { length: height },
+    (_, y) =>
+      Array.from({ length: width }, (_, x) => {
+        const index = linearIndex(width, y, x);
+        if (tiles.has(index)) {
+          return "O";
+        }
+
+        if (walls.has(index)) {
+          return "#";
+        }
+
+        return ".";
+      }).join(""),
+  ).join("\n");
+}
+
+function findBestTiles(visited: ReindeerMemory, end: number): Set<number> {
+  const lowestScore = findLowestScore(visited, end);
+  const bestPaths = visited
+    .values()
+    .filter(
+      ({ score, path }) => score === lowestScore && path.at(-1) === end,
+    )
+    .map(({ path }) => path);
+  return new Set(bestPaths.flatMap((path) => path));
 }
 
 function findLowestScore(visited: ReindeerMemory, end: number): number {
