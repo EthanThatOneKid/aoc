@@ -4,14 +4,41 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 22
+  console.log("Part 2", part2(input)); // 6,1
 }
 
 function part1(input: string): number {
   const { size, limit } = environment("example");
   const corrupted = parseCorrupted(input, size, limit);
-  console.log(corrupted.size);
-  const path = aStar(size, corrupted, 0, size * size - 1);
+  const path = aStar(size, new Set(corrupted), 0, size * size - 1);
   return (path?.length ?? 0) - 1;
+}
+
+// What are the coordinates of the first byte that will prevent the exit from being reachable from your starting position? (Provide the answer as two integers separated by a comma with no other characters.)
+function part2(input: string): string {
+  const { size } = environment("example");
+  const allCorrupted = parseCorrupted(input, size);
+
+  // Use binary search to find the first byte that will prevent the exit from being reachable between 1024 and 0 limit.
+  let lo = 0;
+  let hi = allCorrupted.length;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) * 0.5);
+    const path = aStar(
+      size,
+      new Set(allCorrupted.slice(0, mid)),
+      0,
+      size * size - 1,
+    );
+    if (path === null) {
+      hi = mid;
+    } else {
+      lo = mid + 1;
+    }
+  }
+
+  const [x, y] = fromLinearIndex(size, allCorrupted[lo - 1]);
+  return `${x},${y}`;
 }
 
 function environment(name: "example" | "input") {
@@ -104,16 +131,14 @@ function parseCorrupted(
   input: string,
   size: number,
   limit?: number,
-): Set<number> {
-  return new Set(
-    input
-      .split("\n")
-      .map((line) => {
-        const [x, y] = line.split(",").map((n) => parseInt(n));
-        return linearIndex(size, y, x);
-      })
-      .filter((_, index) => limit === undefined || index < limit),
-  );
+): number[] {
+  return input
+    .split("\n")
+    .map((line) => {
+      const [x, y] = line.split(",").map((n) => parseInt(n));
+      return linearIndex(size, y, x);
+    })
+    .filter((_, index) => limit === undefined || index < limit);
 }
 
 function fromLinearIndex(width: number, index: number): [number, number] {
