@@ -76,7 +76,7 @@ interface Input {
 }
 
 function parseInput(input: string): Input {
-  const [rawRules, rawUpdates] = input.split("\r\n\r\n");
+  const [rawRules, rawUpdates] = input.split("\n\n");
   const rules = parseRules(rawRules);
   const updates = parseUpdates(rawUpdates);
   return { rules, updates };

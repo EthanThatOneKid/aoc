@@ -264,7 +264,7 @@ function* adjacenciesAt(
 }
 
 function parseArrangement(input: string): Arrangement {
-  const lines = input.split("\r\n");
+  const lines = input.split("\n");
   return {
     rows: lines.length,
     columns: lines[0].length,

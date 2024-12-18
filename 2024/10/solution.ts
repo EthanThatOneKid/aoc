@@ -111,7 +111,7 @@ function linearIndex(columns: number, row: number, column: number): number {
 
 function parseTopology(input: string): Topology {
   return input
-    .split("\r\n")
+    .split("\n")
     .map((line) => line.split("").map((digit) => parseInt(digit)));
 }
 

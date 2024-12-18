@@ -202,7 +202,7 @@ function parseMaze(input: string): Maze {
   let start = -1;
   let end = -1;
 
-  input.split("\r\n").forEach((line, y) => {
+  input.split("\n").forEach((line, y) => {
     width = line.length;
     height = Math.max(height, y + 1);
 

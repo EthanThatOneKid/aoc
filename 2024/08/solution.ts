@@ -154,7 +154,7 @@ function* pairs<T>(set: Set<T>): Generator<[T, T]> {
 }
 
 function parseCity(input: string): City {
-  const map = input.split("\r\n").map((line) => line.split(""));
+  const map = input.split("\n").map((line) => line.split(""));
   const rows = map.length;
   const columns = map[0].length;
   const frequencies = map.reduce((result, antennas, rowIndex) => {

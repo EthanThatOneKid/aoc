@@ -51,7 +51,7 @@ function cheapestPrize(machine: Machine): number {
 function parseMachines(input: string): Machine[] {
   return input
     .matchAll(
-      /Button A: X\+(\d+), Y\+(\d+)\r\nButton B: X\+(\d+), Y\+(\d+)\r\nPrize: X=(\d+), Y=(\d+)/g,
+      /Button A: X\+(\d+), Y\+(\d+)\nButton B: X\+(\d+), Y\+(\d+)\nPrize: X=(\d+), Y=(\d+)/g,
     )
     .map((match): Machine => ({
       buttonA: [parseInt(match[1]), parseInt(match[2])],
