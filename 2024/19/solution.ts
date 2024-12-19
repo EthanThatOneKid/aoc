@@ -3,7 +3,7 @@ if (import.meta.main) {
   const input = await Deno.readTextFile(
     new URL(import.meta.resolve("./input")),
   );
-  console.log("Part 1", part1(input));
+  console.log("Part 1", part1(input)); // 6
 }
 
 function part1(input: string): number {
@@ -13,7 +13,15 @@ function part1(input: string): number {
   return possibleDesigns.length;
 }
 
-function possible(patterns: string[], design: string): boolean {
+function possible(
+  patterns: string[],
+  design: string,
+  memo: Set<string> = new Set(),
+): boolean {
+  if (memo.has(design)) {
+    return false;
+  }
+
   if (design.length === 0) {
     return true;
   }
@@ -21,13 +29,12 @@ function possible(patterns: string[], design: string): boolean {
   const potentialPatterns = patterns
     .filter((pattern) => design.startsWith(pattern));
   for (const pattern of potentialPatterns) {
-    if (!possible(patterns, design.slice(pattern.length))) {
-      continue;
+    if (possible(patterns, design.slice(pattern.length), memo)) {
+      return true;
     }
-
-    return true;
   }
 
+  memo.add(design);
   return false;
 }
 
