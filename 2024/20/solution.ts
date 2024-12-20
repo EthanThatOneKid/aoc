@@ -21,7 +21,23 @@ function picoseconds(maze: Maze): number {
   return path.length - 1;
 }
 
-// The rules for cheating are very strict. Exactly once during a race, a program may disable collision for up to 2 picoseconds. This allows the program to pass through walls as if they were regular track. At the end of the cheat, the program must be back on normal track again; otherwise, it will receive a segmentation fault and get disqualified.
+function* generateCheats(
+  maze: Maze,
+  position: number,
+  t: number,
+): Generator<number> {
+  const [x, y] = fromLinearIndex(maze.width, position);
+  for (let i = 0; i < maze.height; i++) {
+    for (let j = 0; j < maze.width; j++) {
+      const distance = Math.abs(x - j) + Math.abs(y - i);
+      if (distance > t) {
+        continue;
+      }
+
+      yield linearIndex(maze.width, i, j);
+    }
+  }
+}
 
 // From day 18.
 function aStar(
@@ -44,6 +60,8 @@ function aStar(
     if (current === end) {
       return reconstructPath(cameFrom, current);
     }
+
+    // TODO: Add cheats to the open set.
 
     openSet.delete(current);
     for (const neighbor of neighbors(size, current)) {
@@ -152,5 +170,5 @@ function linearIndex(width: number, dy: number, dx: number): number {
 }
 
 function fromLinearIndex(width: number, index: number): [number, number] {
-  return [index % width, Math.floor(index / width)];
+  return [Math.floor(index / width), index % width];
 }
