@@ -21,7 +21,7 @@ function picoseconds(maze: Maze): number {
   return path.length - 1;
 }
 
-function* generateCheats(
+function* _generateCheats(
   maze: Maze,
   position: number,
   t: number,
