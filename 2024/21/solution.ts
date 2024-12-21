@@ -1,36 +1,3 @@
-class Agent {
-  public controllees: Agent[] = [];
-  public sequence: string[] = [];
-  public x: number;
-  public y: number;
-
-  public constructor(
-    public keypad: Keypad,
-    public startButton: string,
-    public controller?: Agent,
-  ) {
-    [this.x, this.y] = findButton(this.keypad, this.startButton);
-
-    if (this.controller !== undefined) {
-      this.controller.controllees.push(this);
-    }
-  }
-
-  public activate(): void {
-    const button = this.keypad[this.y][this.x];
-    this.sequence.push(button);
-
-    const direction = directions
-      .findIndex((direction) => direction.type === button);
-    if (direction !== -1) {
-      this.x += directions[direction].dx;
-      this.y += directions[direction].dy;
-    } else if (button === "A") {
-      this.controllees.forEach((controllee) => controllee.activate());
-    }
-  }
-}
-
 const numericKeypad: Keypad = [
   "789",
   "456",
@@ -46,13 +13,59 @@ const directionalKeypad: Keypad = [
 type Keypad = string[];
 
 const directions = [
-  { type: "^", dx: 0, dy: -1 },
-  { type: ">", dx: 1, dy: 0 },
-  { type: "v", dx: 0, dy: 1 },
-  { type: "<", dx: -1, dy: 0 },
+  { button: "^", dx: 0, dy: -1 },
+  { button: ">", dx: 1, dy: 0 },
+  { button: "v", dx: 0, dy: 1 },
+  { button: "<", dx: -1, dy: 0 },
 ];
 
 type Direction = 0 | 1 | 2 | 3;
+
+class KeypadAgent implements Agent {
+  public sequence: string[] = [];
+
+  public constructor(
+    public keypad: Keypad,
+    public x: number,
+    public y: number,
+    public agent?: Agent,
+  ) {}
+
+  public press(button: string): void {
+    const [x, y] = findButton(this.keypad, button);
+    const paths = findPaths(this.keypad, [this.x, this.y], [x, y]);
+
+    const [path] = paths;
+    for (const direction of path) {
+      this.agent?.press(directions[direction].button);
+      this.x += directions[direction].dx;
+      this.y += directions[direction].dy;
+    }
+
+    this.agent?.press("A");
+    this.sequence.push(button);
+  }
+
+  static fromStartButton(
+    keypad: Keypad,
+    button: string,
+    agent?: Agent,
+  ): KeypadAgent {
+    return new KeypadAgent(keypad, ...findButton(keypad, button), agent);
+  }
+}
+
+class DummyAgent implements Agent {
+  public sequence: string[] = [];
+
+  public press(button: string): void {
+    this.sequence.push(button);
+  }
+}
+
+interface Agent {
+  press(button: string): void;
+}
 
 // deno --allow-read 2024/21/solution.ts
 if (import.meta.main) {
@@ -66,13 +79,21 @@ function part1(input: string): number {
   const codes = parseCodes(input);
   console.log({ codes });
 
-  const me = new Agent(directionalKeypad, "A");
-  const robot0 = new Agent(directionalKeypad, "A", me);
-  const robot1 = new Agent(directionalKeypad, "A", robot0);
-  const door = new Agent(numericKeypad, "A", robot1);
-  console.log({ me, robot0, robot1, door });
+  // const me = new Agent(directionalKeypad, "A");
+  // const robot1 = new Agent(directionalKeypad, "A", me);
+  const dummy = new DummyAgent();
+  const robot0 = KeypadAgent.fromStartButton(directionalKeypad, "A", dummy); // , robot1);
+  const door = KeypadAgent.fromStartButton(numericKeypad, "A", robot0);
 
-  // TODO: How do I know what to button to seek?
+  for (const code of codes) {
+    for (const button of code) {
+      door.press(button);
+    }
+
+    // TODO: wip https://adventofcode.com/2024/day/21
+    console.log({ sequence: robot0.sequence });
+    throw new Error("Not implemented");
+  }
 
   return 0;
 }
@@ -127,7 +148,8 @@ function findPaths(
     }
   }
 
-  return paths;
+  const minLength = Math.min(...paths.map((path) => path.length));
+  return paths.filter((path) => path.length === minLength);
 }
 
 function parseCodes(input: string): string[] {
