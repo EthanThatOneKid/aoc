@@ -4,6 +4,7 @@ if (import.meta.main) {
     new URL(import.meta.resolve("./input")),
   );
   console.log("Part 1", part1(input)); // 37327623
+  console.log("Part 2", part2(input)); // 23
 }
 
 function part1(input: string): number {
@@ -20,6 +21,32 @@ function part1(input: string): number {
     (sum, secretNumber) => sum + secretNumber,
     0,
   );
+}
+
+function part2(input: string): number {
+  // const secretNumbers = parseSecretNumbers(input);
+  const prices = getPrices(123, 10);
+  console.log(getChanges(prices));
+  return 0;
+}
+
+function getPrices(secretNumber: number, iterations: number): number[] {
+  const prices: number[] = [];
+  for (let i = 0; i < iterations; i++) {
+    prices.push(secretNumber % 10);
+    secretNumber = evolve(secretNumber);
+  }
+
+  return prices;
+}
+
+function getChanges(numbers: number[]): number[] {
+  const changes: number[] = [];
+  for (let i = 0; i < numbers.length - 1; i++) {
+    changes.push(numbers[i + 1] - numbers[i]);
+  }
+
+  return changes;
 }
 
 function evolve(secretNumber: number): number {
