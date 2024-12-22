@@ -1,11 +1,11 @@
-const numericKeypad: Keypad = [
+const keypadNumeric: Keypad = [
   "789",
   "456",
   "123",
   " 0A",
 ];
 
-const directionalKeypad: Keypad = [
+const keypadDirectional: Keypad = [
   " ^A",
   "<v>",
 ];
@@ -21,7 +21,7 @@ const directions = [
 
 type Direction = 0 | 1 | 2 | 3;
 
-class KeypadAgent implements Agent {
+class Agent {
   public sequence: string[] = [];
 
   public constructor(
@@ -31,40 +31,82 @@ class KeypadAgent implements Agent {
     public agent?: Agent,
   ) {}
 
+  public get root(): Agent {
+    if (this.agent === undefined) {
+      return this;
+    }
+
+    return this.agent.root;
+  }
+
+  // Goal: find shortest sequence of button presses to reach target button.
   public press(button: string): void {
+    if (this.agent === undefined) {
+      this.sequence.push(button);
+      return;
+    }
+
     const [x, y] = findButton(this.keypad, button);
     const paths = findPaths(this.keypad, [this.x, this.y], [x, y]);
+    if (paths.length === 0) {
+      return;
+    }
 
-    const [path] = paths;
-    for (const direction of path) {
-      this.agent?.press(directions[direction].button);
-      this.x += directions[direction].dx;
-      this.y += directions[direction].dy;
+    // Find which path results in the shortest sequence of button presses.
+    const pathLengths: number[] = [];
+    for (const path of paths) {
+      const agent = this.agent.copy();
+      for (const direction of path) {
+        agent.press(directions[direction].button);
+        agent.x += directions[direction].dx;
+        agent.y += directions[direction].dy;
+      }
+
+      // pathLengths.push(agent.sequence.length); Might work too.
+      console.log({ root: agent.root });
+      pathLengths.push(agent.root.sequence.length);
+      // throw new Error("Not implemented");
+    }
+
+    // Check if any path is of length 0.
+    const minLength = Math.min(...pathLengths);
+    if (minLength === 0) {
+      return;
+    }
+
+    // WIP: Something unexpected is happening.
+    const results = paths.filter((_, i) => pathLengths[i] === minLength);
+    if (results.length !== 1) {
+      console.log({ results, pathLengths });
+      throw new Error("Not implemented");
+    }
+
+    for (const direction of results[0]) {
+      this.agent.press(directions[direction].button);
+      this.agent.x += directions[direction].dx;
+      this.agent.y += directions[direction].dy;
     }
 
     this.agent?.press("A");
     this.sequence.push(button);
   }
 
-  static fromStartButton(
+  public copy(): Agent {
+    return new Agent(
+      this.keypad,
+      this.x,
+      this.y,
+      this.agent?.copy(),
+    );
+  }
+
+  static fromKeypad(
     keypad: Keypad,
     button: string,
     agent?: Agent,
-  ): KeypadAgent {
-    return new KeypadAgent(keypad, ...findButton(keypad, button), agent);
+  ): Agent {
+    return new Agent(keypad, ...findButton(keypad, button), agent);
   }
-}
-
-class DummyAgent implements Agent {
-  public sequence: string[] = [];
-
-  public press(button: string): void {
-    this.sequence.push(button);
-  }
-}
-
-interface Agent {
-  press(button: string): void;
 }
 
 // deno --allow-read 2024/21/solution.ts
@@ -79,11 +121,11 @@ function part1(input: string): number {
   const codes = parseCodes(input);
   console.log({ codes });
 
-  // const me = new Agent(directionalKeypad, "A");
-  // const robot1 = new Agent(directionalKeypad, "A", me);
-  const dummy = new DummyAgent();
-  const robot0 = KeypadAgent.fromStartButton(directionalKeypad, "A", dummy); // , robot1);
-  const door = KeypadAgent.fromStartButton(numericKeypad, "A", robot0);
+  // const dummy = Agent.fromStartButton(directionalKeypad, "A");
+  const me = Agent.fromKeypad(keypadDirectional, "A"); // , dummy);
+  const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
+  const robot0 = Agent.fromKeypad(keypadDirectional, "A", robot1);
+  const door = Agent.fromKeypad(keypadNumeric, "A", robot0);
 
   for (const code of codes) {
     for (const button of code) {
@@ -91,7 +133,7 @@ function part1(input: string): number {
     }
 
     // TODO: wip https://adventofcode.com/2024/day/21
-    console.log({ sequence: robot0.sequence });
+    console.log({ sequence: door.root.sequence });
     throw new Error("Not implemented");
   }
 
