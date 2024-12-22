@@ -23,7 +23,7 @@ type Direction = 0 | 1 | 2 | 3;
 
 class Agent {
   public sequence: string[] = [];
-  public id: string | undefined;
+  // public id: string | undefined;
 
   public constructor(
     public keypad: Keypad,
@@ -42,11 +42,11 @@ class Agent {
 
   // Goal: find shortest sequence of button presses to reach target button.
   public press(button: string): void {
-    if (this.id !== undefined) {
-      console.log(`${this.id}: ${button}`);
-    }
+    // if (this.id !== undefined) {
+    //   console.log(`${this.id}: ${button}`);
+    // }
 
-    const sequences = findShortestSequences(
+    const sequences = findSequences(
       this.keypad,
       [this.x, this.y],
       findButton(this.keypad, button),
@@ -57,22 +57,22 @@ class Agent {
     let cheapestLength = Infinity;
     for (let i = 0; i < sequences.length; i++) {
       const sequence = sequences[i];
-      const agent = this.agent?.copy();
-      sequence.forEach((direction) => agent?.move(direction));
-
-      if (agent === undefined) {
-        continue;
-      }
-
-      const rootLength = agent.root.sequence.length;
-      if (cheapestIndex === -1 || rootLength < cheapestLength) {
-        cheapestIndex = i;
-        cheapestLength = rootLength;
+      if (this.agent !== undefined) {
+        const agent = this.agent.clone();
+        sequence.forEach((direction) => agent.move(direction));
+        const rootLength = agent.root.sequence.length;
+        if (cheapestIndex === -1 || rootLength < cheapestLength) {
+          cheapestIndex = i;
+          cheapestLength = rootLength;
+        }
+      } else {
+        console.log({ noAgent: sequence });
       }
     }
 
     if (cheapestIndex > -1) {
-      sequences[cheapestIndex].forEach((direction) => this.move(direction));
+      sequences[cheapestIndex]
+        .forEach((direction) => this.agent?.move(direction));
     }
 
     this.agent?.press("A");
@@ -85,13 +85,10 @@ class Agent {
     this.y += directions[direction].dy;
   }
 
-  private copy(): Agent {
-    return new Agent(
-      this.keypad,
-      this.x,
-      this.y,
-      this.agent?.copy(),
-    );
+  private clone(): Agent {
+    const agent = new Agent(this.keypad, this.x, this.y, this.agent);
+    agent.sequence = [...this.sequence];
+    return agent;
   }
 
   static fromKeypad(
@@ -113,16 +110,16 @@ if (import.meta.main) {
 
 function part1(input: string): number {
   const codes = parseCodes(input);
-  const dummy = Agent.fromKeypad(keypadDirectional, "A");
-  const me = Agent.fromKeypad(keypadDirectional, "A", dummy);
-  const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
-  const robot0 = Agent.fromKeypad(keypadDirectional, "A", robot1);
+  // const dummy = Agent.fromKeypad(keypadDirectional, "A");
+  // const me = Agent.fromKeypad(keypadDirectional, "A", dummy);
+  // const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
+  const robot0 = Agent.fromKeypad(keypadDirectional, "A"); // , robot1);
   const door = Agent.fromKeypad(keypadNumeric, "A", robot0);
 
-  me.id = "me";
-  robot1.id = "robot1";
-  robot0.id = "robot0";
-  door.id = "door";
+  // me.id = "me";
+  // robot1.id = "robot1";
+  // robot0.id = "robot0";
+  // door.id = "door";
 
   for (const code of codes) {
     for (const button of code) {
@@ -130,7 +127,11 @@ function part1(input: string): number {
     }
 
     // TODO: wip https://adventofcode.com/2024/day/21
-    console.log({ sequenceRoot: door.root.sequence, sequenceMe: me.sequence });
+    console.log({
+      sequenceDoor: door.sequence,
+      sequenceRobot0: robot0.sequence,
+      sequenceRoot: door.root.sequence,
+    });
     throw new Error("Not implemented");
   }
 
@@ -148,21 +149,21 @@ function findButton(keypad: Keypad, button: string): [number, number] {
     }
   }
 
-  throw new Error(`Button ${button} not found in keypad`);
+  throw new Error(`Button ${button} not found in keypad ${keypad}`);
 }
 
-function findShortestSequences(
+function findSequences(
   keypad: Keypad,
   start: [number, number],
   end: [number, number],
 ): Array<Direction[]> {
-  const shortestSequences: Array<Direction[]> = [];
+  const sequences: Array<Direction[]> = [];
   const visited = new Set<string>();
   const queue: Array<[[number, number], Direction[]]> = [[start, []]];
   while (queue.length > 0) {
     const [[x, y], path] = queue.shift()!;
     if (x === end[0] && y === end[1]) {
-      shortestSequences.push(path);
+      sequences.push(path);
       continue;
     }
 
@@ -187,8 +188,7 @@ function findShortestSequences(
     }
   }
 
-  const minLength = Math.min(...shortestSequences.map((path) => path.length));
-  return shortestSequences.filter((path) => path.length === minLength);
+  return sequences;
 }
 
 function parseCodes(input: string): string[] {
