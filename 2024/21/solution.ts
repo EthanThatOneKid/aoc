@@ -23,6 +23,7 @@ type Direction = 0 | 1 | 2 | 3;
 
 class Agent {
   public sequence: string[] = [];
+  public id: string | undefined;
 
   public constructor(
     public keypad: Keypad,
@@ -41,9 +42,8 @@ class Agent {
 
   // Goal: find shortest sequence of button presses to reach target button.
   public press(button: string): void {
-    if (this.agent === undefined) {
-      this.sequence.push(button);
-      return;
+    if (this.id !== undefined) {
+      console.log(`${this.id}: ${button}`);
     }
 
     const sequences = findShortestSequences(
@@ -51,25 +51,30 @@ class Agent {
       [this.x, this.y],
       findButton(this.keypad, button),
     );
-    if (sequences.length === 0) {
-      return;
-    }
 
     // Find which path results in the shortest sequence of button presses.
-    let cheapestAgent: Agent | undefined;
-    for (const sequence of sequences) {
-      const agent = this.agent.copy();
-      sequence.forEach((direction) => agent.move(direction));
+    let cheapestIndex = -1;
+    let cheapestLength = Infinity;
+    for (let i = 0; i < sequences.length; i++) {
+      const sequence = sequences[i];
+      const agent = this.agent?.copy();
+      sequence.forEach((direction) => agent?.move(direction));
 
-      if (
-        cheapestAgent === undefined ||
-        agent.root.sequence.length < cheapestAgent.root.sequence.length
-      ) {
-        cheapestAgent = agent;
+      if (agent === undefined) {
+        continue;
+      }
+
+      const rootLength = agent.root.sequence.length;
+      if (cheapestIndex === -1 || rootLength < cheapestLength) {
+        cheapestIndex = i;
+        cheapestLength = rootLength;
       }
     }
 
-    this.agent = cheapestAgent?.copy();
+    if (cheapestIndex > -1) {
+      sequences[cheapestIndex].forEach((direction) => this.move(direction));
+    }
+
     this.agent?.press("A");
     this.sequence.push(button);
   }
@@ -108,10 +113,16 @@ if (import.meta.main) {
 
 function part1(input: string): number {
   const codes = parseCodes(input);
-  const me = Agent.fromKeypad(keypadDirectional, "A");
+  const dummy = Agent.fromKeypad(keypadDirectional, "A");
+  const me = Agent.fromKeypad(keypadDirectional, "A", dummy);
   const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
   const robot0 = Agent.fromKeypad(keypadDirectional, "A", robot1);
   const door = Agent.fromKeypad(keypadNumeric, "A", robot0);
+
+  me.id = "me";
+  robot1.id = "robot1";
+  robot0.id = "robot0";
+  door.id = "door";
 
   for (const code of codes) {
     for (const button of code) {
