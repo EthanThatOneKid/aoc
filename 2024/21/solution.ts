@@ -23,7 +23,6 @@ type Direction = 0 | 1 | 2 | 3;
 
 class Agent {
   public sequence: string[] = [];
-  // public id: string | undefined;
 
   public constructor(
     public keypad: Keypad,
@@ -42,10 +41,6 @@ class Agent {
 
   // Goal: find shortest sequence of button presses to reach target button.
   public press(button: string): void {
-    // if (this.id !== undefined) {
-    //   console.log(`${this.id}: ${button}`);
-    // }
-
     const sequences = findSequences(
       this.keypad,
       [this.x, this.y],
@@ -66,7 +61,9 @@ class Agent {
           cheapestLength = rootLength;
         }
       } else {
-        console.log({ noAgent: sequence });
+        console.log({
+          noAgent: sequence.map((d) => directions[d].button).join(""),
+        });
       }
     }
 
@@ -110,16 +107,10 @@ if (import.meta.main) {
 
 function part1(input: string): number {
   const codes = parseCodes(input);
-  // const dummy = Agent.fromKeypad(keypadDirectional, "A");
-  // const me = Agent.fromKeypad(keypadDirectional, "A", dummy);
-  // const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
-  const robot0 = Agent.fromKeypad(keypadDirectional, "A"); // , robot1);
+  const me = Agent.fromKeypad(keypadDirectional, "A");
+  const robot1 = Agent.fromKeypad(keypadDirectional, "A", me);
+  const robot0 = Agent.fromKeypad(keypadDirectional, "A", robot1);
   const door = Agent.fromKeypad(keypadNumeric, "A", robot0);
-
-  // me.id = "me";
-  // robot1.id = "robot1";
-  // robot0.id = "robot0";
-  // door.id = "door";
 
   for (const code of codes) {
     for (const button of code) {
@@ -128,9 +119,11 @@ function part1(input: string): number {
 
     // TODO: wip https://adventofcode.com/2024/day/21
     console.log({
-      sequenceDoor: door.sequence,
-      sequenceRobot0: robot0.sequence,
-      sequenceRoot: door.root.sequence,
+      sequenceDoor: door.sequence.join(""), // 029A
+      sequenceRobot0: robot0.sequence.join(""), // <A^A>^^AvvvA
+      sequenceRobot1: robot1.sequence.join(""), // v<<A>>^A<A>AvA<^AA>A<vAAA>^A
+      sequenceMe: me.sequence.join(""), // <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
+      sequenceRoot: door.root.sequence.join(""),
     });
     throw new Error("Not implemented");
   }
