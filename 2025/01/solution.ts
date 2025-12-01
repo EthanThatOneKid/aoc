@@ -25,7 +25,7 @@ function part1(input: string): number {
     let value = 50;
     let zeroes = 0;
     for (const rotation of rotations) {
-        value = rotate(value, rotation);
+        value = rotate(value, rotation).value;
         if (value === 0) {
             zeroes++;
         }
@@ -35,7 +35,20 @@ function part1(input: string): number {
 }
 
 function part2(input: string): number {
-    return 0;
+    const rotations = parseInput(input);
+
+    let value = 50;
+    let zeroes = 0;
+    for (const rotation of rotations) {
+        const { value: nextValue, zeroes: nextZeroes } = rotate(
+            value,
+            rotation,
+        );
+        value = nextValue;
+        zeroes += nextZeroes;
+    }
+
+    return zeroes;
 }
 
 function parseInput(input: string): Rotation[] {
@@ -49,14 +62,27 @@ function parseInput(input: string): Rotation[] {
 // Because the dial is a circle, turning the dial left from 0 one click makes it point at 99.
 // Similarly, turning the dial right from 99 one click makes it point at 0.
 
-function rotate(value: number, rotation: Rotation): number {
-    if (rotation.go === "left") {
-        return (value - rotation.distance + 100) % 100;
-    } else if (rotation.go === "right") {
-        return (value + rotation.distance) % 100;
+function rotate(
+    value: number,
+    rotation: Rotation,
+): { zeroes: number; value: number } {
+    let zeroes = 0;
+    let distance = Number(rotation.distance);
+    while (distance > 0) {
+        if (rotation.go === "left") {
+            value = (value - 1 + 100) % 100;
+        } else if (rotation.go === "right") {
+            value = (value + 1) % 100;
+        }
+
+        if (value === 0) {
+            zeroes++;
+        }
+
+        distance--;
     }
 
-    throw new Error("Invalid rotation");
+    return { zeroes, value };
 }
 
 interface Rotation {
