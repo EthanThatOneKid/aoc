@@ -4,7 +4,7 @@ if (import.meta.main) {
         new URL(import.meta.resolve("./input")),
     );
 
-    const exampleInput = `..@@.@@@@.
+    const _exampleInput = `..@@.@@@@.
 @@@.@.@.@@
 @@@@@.@.@@
 @.@@@@..@.
@@ -16,20 +16,36 @@ if (import.meta.main) {
 @.@.@@@.@.`;
 
     console.log("Part 1", part1(input));
-    console.log("Part 2", part2(exampleInput));
+    console.log("Part 2", part2(input));
 }
 
 function part1(input: string): number {
     const rollsMap = parseInput(input);
     return Array.from(rollsMap.values())
-        .filter((roll) => {
-            return countAdjacent(rollsMap, roll) < 4;
-        })
+        .filter((roll) => canRemove(rollsMap, roll))
         .length;
 }
 
 function part2(input: string): number {
-    return 0;
+    const rollsMap = parseInput(input);
+
+    let removed = 0;
+    while (true) {
+        const rollsToRemove = Array.from(rollsMap.values())
+            .filter((roll) => canRemove(rollsMap, roll));
+        if (rollsToRemove.length === 0) {
+            return removed;
+        }
+
+        rollsToRemove.forEach((roll) => {
+            rollsMap.delete(makeRollKey(roll));
+            removed++;
+        });
+    }
+}
+
+function canRemove(map: RollsMap, roll: Roll, k = 4): boolean {
+    return countAdjacent(map, roll) < k;
 }
 
 function countAdjacent(map: RollsMap, roll: Roll): number {
