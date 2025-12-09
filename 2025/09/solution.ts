@@ -17,19 +17,21 @@ if (import.meta.main) {
     console.log("Example 1", part1(exampleInput));
     console.log("Example 2", part2(exampleInput));
 
-    // console.log("Part 1", part1(input));
-    // console.log("Part 2", part2(input));
+    console.log("Part 1", part1(input));
+    console.log("Part 2", part2(input));
 }
 
 function part1(input: string): number {
     const tiles = parseInput(input);
-    const origin = new Tile(0, 0);
-    const sorted = tiles.toSorted((t1, t2) => {
-        return manhattanDistance(t1, origin) - manhattanDistance(t2, origin);
-    });
 
-    console.log(sorted);
-    return area(sorted.at(0)!, sorted.at(-1)!);
+    let largestArea = 0;
+    for (let i = 0; i < tiles.length; i++) {
+        for (let j = i + 1; j < tiles.length; j++) {
+            largestArea = Math.max(largestArea, area(tiles[i], tiles[j]));
+        }
+    }
+
+    return largestArea;
 }
 
 function part2(input: string): number {
@@ -42,8 +44,8 @@ function manhattanDistance(t1: Tile, t2: Tile): number {
 }
 
 function area(t1: Tile, t2: Tile) {
-    const width = Math.abs(t1.x - t2.x);
-    const height = Math.abs(t1.y - t2.y);
+    const width = Math.abs(t1.x - t2.x) + 1;
+    const height = Math.abs(t1.y - t2.y) + 1;
     return width * height;
 }
 
