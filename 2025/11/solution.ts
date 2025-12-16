@@ -4,7 +4,7 @@ if (import.meta.main) {
         new URL(import.meta.resolve("./input")),
     );
 
-    const exampleInput = `aaa: you hhh
+    const example1 = `aaa: you hhh
 you: bbb ccc
 bbb: ddd eee
 ccc: ddd eee fff
@@ -15,8 +15,22 @@ ggg: out
 hhh: ccc fff iii
 iii: out`;
 
-    console.log("Example part 1", part1(exampleInput));
-    console.log("Example part 2", part2(exampleInput));
+    const example2 = `svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out`;
+
+    console.log("Example part 1", part1(example1));
+    console.log("Example part 2", part2(example2));
 
     console.log("Part 1", part1(input));
     console.log("Part 2", part2(input));
@@ -33,27 +47,47 @@ function parse(input: string): Record<string, string[]> {
     return graph;
 }
 
-function part1(input: string): number {
-    const graph = parse(input);
+function countPaths(
+    graph: Record<string, string[]>,
+    start: string,
+    end: string,
+): number {
     const memo = new Map<string, number>();
 
-    function countPaths(node: string): number {
-        if (node === "out") return 1;
+    function dfs(node: string): number {
+        if (node === end) return 1;
         if (memo.has(node)) return memo.get(node)!;
 
         let total = 0;
         const neighbors = graph[node] || [];
         for (const neighbor of neighbors) {
-            total += countPaths(neighbor);
+            total += dfs(neighbor);
         }
 
         memo.set(node, total);
         return total;
     }
 
-    return countPaths("you");
+    return dfs(start);
+}
+
+function part1(input: string): number {
+    const graph = parse(input);
+    return countPaths(graph, "you", "out");
 }
 
 function part2(input: string): number {
-    return 0;
+    const graph = parse(input);
+
+    // Path 1: svr -> dac -> fft -> out
+    const p1 = countPaths(graph, "svr", "dac") *
+        countPaths(graph, "dac", "fft") *
+        countPaths(graph, "fft", "out");
+
+    // Path 2: svr -> fft -> dac -> out
+    const p2 = countPaths(graph, "svr", "fft") *
+        countPaths(graph, "fft", "dac") *
+        countPaths(graph, "dac", "out");
+
+    return p1 + p2;
 }
